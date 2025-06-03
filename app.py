@@ -10,6 +10,8 @@ import logging
 import os
 from pymilvus import MilvusException
 import pymilvus
+
+from src.OQLGenerator import OQLGenerator
 from src.constants import (
     ARGS_CONNECTION_ARGS,
     ERROR_EXCEEDS_TOKEN_LIMIT,
@@ -52,6 +54,7 @@ from src.llm_auth import (
 from src.job_recycle_conversations import run_scheduled_job_continuously
 from src.token_usage_database import get_token_usage
 from src.utils import need_restrict_usage
+from src.OQLGenerator import OQLGenerator
 
 # prepare logger
 logging.basicConfig(level=logging.INFO)
@@ -418,6 +421,30 @@ def getTokenUsage(
     except Exception as e:
         logger.error(e)
         return {"error": str(e), "code": ERROR_UNKNOWN}
+
+@app.post(
+   "/generate-oql", description="generates an OQL query"
+)
+async def generateOQL(
+        request: Request,  # ChatCompletionsPostModel,
+):
+    authorization = request.headers.get("Authorization")
+    auth = llm_get_client_auth(authorization)
+    auth_type = llm_get_auth_type(auth)
+    jsonBody = await request.json()
+
+    message = extract_and_process_params_from_json_body(
+        jsonBody, "message", defaultVal=''
+    )
+    try:
+        oql_generator = OQLGenerator()
+        generated_query = oql_generator.generate_oql(message)
+
+        return {
+            "query": generated_query.content,
+        }
+    except Exception as e:
+        return {"error": str(e)}
 
 
 if __name__ == "__main__":
