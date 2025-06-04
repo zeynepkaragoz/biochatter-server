@@ -34,10 +34,22 @@ GENE: OQL_KEYWORDS;
 Use square brackets to group genes, optionally with a label in double quotes.
 Example: ["TP53 PATHWAY" TP53 P53AIP1]
 
-# Notes:
-- If given an Ensembl ID, convert it to a HUGO symbol before generating the query.
-- Do NOT explain, format, or wrap in markdown—only return the raw OQL query.
-- If a variant type is not specified in the message, use gene ID alone to build the query. 
+
+# Follow these key principles when generating output:
+
+Use the DATATYPES: keyword whenever multiple genes share the same OQL modifiers (e.g. DRIVER, EXP > 2, AMP GAIN, etc.). This avoids repetition.
+
+Example: DATATYPES: DRIVER; TP53 BRCA1 EGFR
+
+Avoid default verbosity. If a gene is queried without any modifiers, don’t explicitly include variant type. Just write TP53;.
+
+When querying expression or protein values with shared thresholds, combine them using DATATYPES:.
+
+Example: DATATYPES: EXP > 2 EXP < -2; MYC EGFR
+
+Avoid redundant keywords — don't list mutation types like unless explicitly required by the user.
+
+Always use HUGO gene symbols instead of Ensembl IDs if provided.
 
 Only respond with a complete, valid query. Do not include any commentary or explanation.
 
