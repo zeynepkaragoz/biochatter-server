@@ -14,6 +14,7 @@ GENE: OQL_KEYWORDS; OQL: TRUE
 - MUT: all non-synonymous mutations
   - MUT = <protein change> (e.g., V600E)
   - MUT = <mutation type> (MISSENSE, NONSENSE, NONSTART, NONSTOP, FRAMESHIFT, INFRAME, SPLICE, TRUNC)
+  - MUT = (<position range>) e.g., (12-13) or (718-854)
 - FUSION: all gene fusions
 - AMP: amplification
 - HOMDEL: deep/homozygous deletion
@@ -24,12 +25,12 @@ GENE: OQL_KEYWORDS; OQL: TRUE
 - PROT > x or < -x: protein expression x SD above or below mean
 
 # Modifiers:
-- DRIVER: restrict to driver events
-- GERMLINE / SOMATIC: restrict to mutation origin
+- DRIVER: restrict to driver events, combine DRIVER with other variant types if needed (e.g. for driver mutations DRIVER_MUT, for driver fusions DRIVER_FUSION, etc.)
+- GERMLINE / SOMATIC: restrict to mutation origin, combine GERMLINE with other variant types if needed (e.g. for germline mutations GERMLINE_MUT, for somatic mutations SOMATIC_MUT, etc.)
 
 # Operators:
 - !=: exclude a specific mutation
-- DATATYPES: apply keywords to multiple genes
+- DATATYPES: apply keywords to multiple genes if all genes are queried for the same variant type or modifier.
 
 # Merged Tracks:
 Use square brackets to group genes, optionally with a label in double quotes.
@@ -38,25 +39,31 @@ Example: ["TP53 PATHWAY" TP53 P53AIP1] OQL: TRUE
 
 # Follow these key principles when generating output:
 
-Use the DATATYPES: keyword whenever multiple genes share the same OQL modifiers (e.g. DRIVER, EXP > 2, AMP GAIN, etc.). This avoids repetition.
+When multiple genes are queried, return query per gene per variant type or modifier. (e.g. "egfr high expression and pten low expression" should return EGFR: EXP > 2; PTEN: EXP < -2 OQL:TRUE)
+
+Use the DATATYPES: keyword whenever the same OQL modifiers are queried for multiple genes (e.g. DRIVER, EXP > 2, AMP GAIN, etc.). This avoids repetition.
 
 Example: DATATYPES: DRIVER; TP53 BRCA1 EGFR OQL: TRUE
 
-Avoid default verbosity. If a gene is queried without any modifiers, don’t explicitly include variant type. Just write TP53;.
+Avoid default verbosity. If a gene is queried without any variant type or modifier, don’t explicitly include variant type. Just write TP53;.
 
 When querying expression or protein values with shared thresholds, combine them using DATATYPES:.
 
 Example: DATATYPES: EXP > 2 EXP < -2; MYC EGFR OQL: TRUE
 
-Avoid redundant keywords — don't list mutation types like unless explicitly required by the user.
+Avoid redundant keywords — don't list mutation types unless explicitly required by the user.
 
 Always use HUGO gene symbols instead of Ensembl IDs if provided.
 
 Only respond with a complete, valid query. Do not include any commentary or explanation.
 
 #example queries:
+
+"all TP53 mutations"
+TP53: MUT OQL: TRUE
+
 "show me genes in the MAPK pathway"
-KRAS NRAS BRAF MAP2K1 MAP2K2 MAP3K1 MAP3K3 MAP3K7 RAF1 RPS6KA3 OQL: TRUE
+KRAS NRAS BRAF MAP2K1 MAP2K2 MAP3K1 MAP3K3 MAP3K7 RAF1 RPS6KA3 
 
 "query for all EGFR driver fusion events"
 EGFR: FUSION_DRIVER OQL: TRUE
@@ -102,7 +109,3 @@ class OQLGenerator:
         res = self.llm.invoke(messages)
 
         return res
-
-
-# oql_generator = OQLGenerator()
-# print(oql_generator.generate_oql('query for all EGFR driver fusion events'))
